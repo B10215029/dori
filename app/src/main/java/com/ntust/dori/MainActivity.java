@@ -3,6 +3,7 @@ package com.ntust.dori;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
@@ -21,6 +22,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int SPEECH_REQUEST_CODE = 1, CAMERA_REQUEST_CODE = 2;
     Button speak;
     ListView wordList;
+    SQLiteDatabase db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,14 +66,16 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+
+        db = openOrCreateDatabase("instruction", MODE_PRIVATE, null);
+        db.execSQL("CREATE TABLE IF NOT EXISTS Hotkey(_id INTEGER PRIMARY KEY, alias TEXT, instruction TEXT)");
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == SPEECH_REQUEST_CODE && resultCode == RESULT_OK) {
             ArrayList<String> matches = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-
-            extract(matches);
+            exec(analyze(matches));
             wordList.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, matches));
 
 
@@ -83,9 +87,15 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
     }
 
-    void extract(ArrayList<String> matches) {
-        if (matches.get(0).equals("打開相機")) {
+    String analyze(ArrayList<String> matches) {
+        
+        return "";
+    }
+
+    void exec(String match) {
+        if (match.equals("打開相機")) {
             startActivityForResult(new Intent("android.media.action.IMAGE_CAPTURE"), CAMERA_REQUEST_CODE);
         }
+
     }
 }
