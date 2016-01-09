@@ -3,6 +3,7 @@ package com.ntust.dori;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
@@ -22,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int SPEECH_REQUEST_CODE = 1, CAMERA_REQUEST_CODE = 2;
     Button speak;
     ListView wordList;
-    SQLiteDatabase db;
+    SQLiteDatabase db = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         db = openOrCreateDatabase("instruction", MODE_PRIVATE, null);
-        db.execSQL("CREATE TABLE IF NOT EXISTS Hotkey(_id INTEGER PRIMARY KEY, alias TEXT, instruction TEXT)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS Hotkey(_id INTEGER PRIMARY KEY, alias TEXT, instruction TEXT UNIQUE)");
     }
 
     @Override
@@ -77,8 +78,6 @@ public class MainActivity extends AppCompatActivity {
             ArrayList<String> matches = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
             exec(analyze(matches));
             wordList.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, matches));
-
-
         }
         else if (requestCode == CAMERA_REQUEST_CODE && resultCode == RESULT_OK) {
             Uri photoUri = data.getData();
@@ -87,15 +86,22 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
     }
 
-    String analyze(ArrayList<String> matches) {
-        
-        return "";
+    ArrayList<String> analyze(ArrayList<String> matches) {
+        ArrayList<String> instruction = null;
+        //if (matches.get(0).substring(0, 3))
+        Cursor cursor = db.rawQuery("SELECT * FROM Hotkey", null);
+        if (cursor != null) {
+            for (int i=0; i<cursor.getCount(); ++i) {
+
+            }
+            cursor.close();
+        }
+        return instruction;
     }
 
-    void exec(String match) {
-        if (match.equals("打開相機")) {
+    void exec(ArrayList<String> instruction) {
+        if (instruction.get(0).equals("打開相機")) {
             startActivityForResult(new Intent("android.media.action.IMAGE_CAPTURE"), CAMERA_REQUEST_CODE);
         }
-
     }
 }
