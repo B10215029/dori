@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
@@ -55,36 +56,39 @@ public class MainActivity extends AppCompatActivity {
 
         if (activities.size() == 0) {
             speak.setEnabled(false);
-            speak.setText("no intent");
+            speak.setText("不支援語音識別");
         }
 
-        ((Button) findViewById(R.id.test_button_1)).setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.test_button_1).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
             }
         });
 
-        ((Button) findViewById(R.id.test_button_2)).setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.test_button_2).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
             }
         });
 
-        ((Button) findViewById(R.id.button_run)).setOnClickListener(new View.OnClickListener() {
+        findViewById(R.id.button_run).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ArrayList<String> matches = new ArrayList<String>();
+                ArrayList<String> matches = new ArrayList<>();
                 matches.add(((EditText) findViewById(R.id.editText1)).getText().toString());
-                matches.add(((EditText) findViewById(R.id.editText2)).getText().toString());
-                //exec(analyze(matches));
-                exec(matches);
+//                matches.add(((EditText) findViewById(R.id.editText2)).getText().toString());
+                try {
+                    exec(analyze(matches));
+                } catch (Exception e) {
+                    Toast.makeText(MainActivity.this, e.toString(), Toast.LENGTH_LONG).show();
+                }
             }
         });
 
         db = openOrCreateDatabase("instruction", MODE_PRIVATE, null);
-        db.execSQL("CREATE TABLE IF NOT EXISTS HotKey(_id INTEGER PRIMARY KEY, alias TEXT, instruction TEXT UNIQUE)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS HotKey(_id INTEGER PRIMARY KEY, alias TEXT UNIQUE, instruction TEXT)");
         db.execSQL("CREATE TABLE IF NOT EXISTS OldKey(_id INTEGER PRIMARY KEY, instruction TEXT UNIQUE)");
         databaseInit();
     }
@@ -93,6 +97,7 @@ public class MainActivity extends AppCompatActivity {
         Cursor cursor = db.rawQuery("SELECT * FROM OldKey", null);
         if (cursor != null) {
             if (cursor.getCount() == 0) {
+                db.execSQL("INSERT INTO OldKey(instruction) VALUES('新增指令')");
                 db.execSQL("INSERT INTO OldKey(instruction) VALUES('打開')");
                 db.execSQL("INSERT INTO OldKey(instruction) VALUES('寄信')");
                 db.execSQL("INSERT INTO OldKey(instruction) VALUES('撥給')");
@@ -112,8 +117,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == SPEECH_REQUEST_CODE && resultCode == RESULT_OK) {
             ArrayList<String> matches = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-            exec(analyze(matches));
-            wordList.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, matches));
+            try {
+                exec(analyze(matches));
+            } catch (Exception e) {
+                Toast.makeText(this, e.toString(), Toast.LENGTH_LONG).show();
+            }
+            wordList.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, matches));
         }
         else if (requestCode == CAMERA_REQUEST_CODE && resultCode == RESULT_OK) {
             Uri photoUri = data.getData();
@@ -122,31 +131,39 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
     }
 
-    ArrayList<String> analyze(ArrayList<String> matches) {
+    ArrayList<String> analyze(ArrayList<String> matches) throws Exception {
         ArrayList<String> instruction = new ArrayList<>();
 
         Cursor cursor = db.rawQuery("SELECT * FROM HotKey", null);
         if (cursor != null) {
             cursor.moveToFirst();
             for (int i=0; i<cursor.getCount(); ++i) {
-                if (cursor.getString(1).equals(matches.get(0).substring(0, 4))) {
-                    instruction.add(cursor.getString(2));
-                    instruction.add(matches.get(0).substring(4));
-                    cursor.close();
-                    return instruction;
+                if (cursor.getString(1).equals(matches.get(0).substring(0, 2))) { //前2個
+                    matches.set(0, cursor.getString(2) + matches.get(0).substring(2));
+                    break;
                 }
                 cursor.moveToNext();
             }
-            cursor.close();
         }
 
         cursor = db.rawQuery("SELECT * FROM OldKey", null);
         if (cursor != null) {
             cursor.moveToFirst();
             for (int i=0; i<cursor.getCount(); ++i) {
-                if (cursor.getString(1).equals(matches.get(0).substring(0, 2))) {
-                    instruction.add(cursor.getString(1));
+                if (cursor.getString(1).equals(matches.get(0).substring(0, 2))) { //前2個
+                    instruction.add(cursor.getString(1)); //add ins
                     instruction.add(matches.get(0).substring(2));
+                    cursor.close();
+                    return instruction;
+                }
+                cursor.moveToNext();
+            }
+
+            cursor.moveToFirst();
+            for (int i=0; i<cursor.getCount(); ++i) {
+                if (cursor.getString(1).equals(matches.get(0).substring(0, 4))) { //前4個
+                    instruction.add(cursor.getString(1)); //add ins
+                    instruction.add(matches.get(0).substring(4));
                     cursor.close();
                     return instruction;
                 }
@@ -160,9 +177,13 @@ public class MainActivity extends AppCompatActivity {
         return instruction;
     }
 
-    void exec(ArrayList<String> instruction) {
-        Log.e("@@@", instruction.get(0) + "," + instruction.get(1));
-        if (instruction.get(0).equals("打開")) {
+    void exec(ArrayList<String> instruction) throws Exception {
+        if (instruction.get(0).equals("新增指令")) {
+            String hotKey = instruction.get(1).substring(0, 2), oldKey = instruction.get(1).substring(2);
+
+            db.execSQL("INSERT INTO HotKey(alias,instruction) VALUES('" + hotKey + "','" + oldKey + "')");
+        }
+        else if (instruction.get(0).equals("打開")) {
             if (instruction.get(1).equals("相機")) {
                 Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
                 startActivity(intent);
