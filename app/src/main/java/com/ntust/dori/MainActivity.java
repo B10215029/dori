@@ -69,7 +69,8 @@ public class MainActivity extends AppCompatActivity {
         });
 
         db = openOrCreateDatabase("instruction", MODE_PRIVATE, null);
-        db.execSQL("CREATE TABLE IF NOT EXISTS Hotkey(_id INTEGER PRIMARY KEY, alias TEXT, instruction TEXT UNIQUE)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS Oldkey(_id INTEGER PRIMARY KEY, alias TEXT, instruction TEXT UNIQUE)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS Hotkey(_id INTEGER PRIMARY KEY, instruction TEXT UNIQUE)");
     }
 
     @Override
@@ -92,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
         Cursor cursor = db.rawQuery("SELECT * FROM Hotkey", null);
         if (cursor != null) {
             for (int i=0; i<cursor.getCount(); ++i) {
-
+                
             }
             cursor.close();
         }
