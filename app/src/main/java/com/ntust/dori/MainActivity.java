@@ -76,10 +76,9 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 ArrayList<String> matches = new ArrayList<>();
                 matches.add(((EditText) findViewById(R.id.editText1)).getText().toString());
-                matches.add(((EditText) findViewById(R.id.editText2)).getText().toString());
-                //exec(analyze(matches));
+//                matches.add(((EditText) findViewById(R.id.editText2)).getText().toString());
                 try {
-                    exec(matches);
+                    exec(analyze(matches));
                 } catch (Exception e) {
                     Toast.makeText(MainActivity.this, e.toString(), Toast.LENGTH_LONG).show();
                 }
@@ -87,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         db = openOrCreateDatabase("instruction", MODE_PRIVATE, null);
-        db.execSQL("CREATE TABLE IF NOT EXISTS HotKey(_id INTEGER PRIMARY KEY, alias TEXT, instruction TEXT UNIQUE)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS HotKey(_id INTEGER PRIMARY KEY, alias TEXT UNIQUE, instruction TEXT)");
         db.execSQL("CREATE TABLE IF NOT EXISTS OldKey(_id INTEGER PRIMARY KEY, instruction TEXT UNIQUE)");
         databaseInit();
     }
@@ -116,10 +115,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == SPEECH_REQUEST_CODE && resultCode == RESULT_OK) {
             ArrayList<String> matches = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-//            if (matches.size() == 0) {
-//                Toast.makeText(this, "找不到任何符合的", Toast.LENGTH_LONG).show();
-//                return;
-//            }
             try {
                 exec(analyze(matches));
             } catch (Exception e) {
@@ -142,14 +137,11 @@ public class MainActivity extends AppCompatActivity {
             cursor.moveToFirst();
             for (int i=0; i<cursor.getCount(); ++i) {
                 if (cursor.getString(1).equals(matches.get(0).substring(0, 2))) { //前2個
-                    instruction.add(cursor.getString(2)); //add ins
-                    instruction.add(matches.get(0).substring(2));
-                    cursor.close();
-                    return instruction;
+                    matches.set(0, cursor.getString(2) + matches.get(0).substring(2));
+                    break;
                 }
                 cursor.moveToNext();
             }
-            cursor.close();
         }
 
         cursor = db.rawQuery("SELECT * FROM OldKey", null);
@@ -187,34 +179,42 @@ public class MainActivity extends AppCompatActivity {
         if (instruction.get(0).equals("新增指令")) {
             String hotKey = instruction.get(1).substring(0, 2), oldKey = instruction.get(1).substring(2);
 
-            Cursor cursor = db.rawQuery("SELECT * FROM OldKey", null);
-            if (cursor != null) {
-                cursor.moveToFirst();
-                for (int i=0; i<cursor.getCount(); ++i) {
-                    if (cursor.getString(1).equals(oldKey)) {
-                        db.execSQL("INSERT INTO HotKey(alias,instruction) VALUES('" + hotKey + "','" + oldKey + "')");
-                        cursor.close();
-                        return;
-                    }
-                    cursor.moveToNext();
-                }
-                cursor.close();
+            db.execSQL("INSERT INTO HotKey(alias,instruction) VALUES('" + hotKey + "','" + oldKey + "')");
+        }
+        else if (instruction.get(0).equals("打開")) {
+            if (instruction.get(1).equals("相機")) {
+                Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
+                startActivity(intent);
             }
-            Toast.makeText(this, "沒有" + oldKey, Toast.LENGTH_LONG).show();
+            else if (instruction.get(1).equals("聯絡人")) {
+                Uri contacts = Uri.parse("content://contacts/people");
+                Intent showContacts = new Intent(Intent.ACTION_VIEW, contacts);
+                startActivity(showContacts);
+            }
+            else if (instruction.get(1).equals("YouTube")) {
+                Intent launchApp = getPackageManager().getLaunchIntentForPackage("com.google.android.youtube");
+                if (launchApp != null) {
+                    launchApp.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(launchApp);
+                } else {
+                    Uri uri = Uri.parse("market://details?id=" + "com.google.android.youtube");
+                    launchApp = new Intent(Intent.ACTION_VIEW, uri);
+                    startActivity(launchApp);
+                }
+            }
         }
-        else if (instruction.get(0).equals("打開相機")) {
-            Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
-            startActivity(intent);
-        }
-        else if (instruction.get(0).equals("打開聯絡人")) {
-            Uri contacts = Uri.parse("content://contacts/people");
-            Intent showContacts = new Intent(Intent.ACTION_VIEW, contacts);
-            startActivity(showContacts);
-        }
-        else if (instruction.get(0).equals("寄信給")) {
-            Uri mail = Uri.parse("mailto:" + instruction.get(1));
-            Intent sendEmail = new Intent(Intent.ACTION_SENDTO, mail);
-            startActivity(sendEmail);
+        else if (instruction.get(0).equals("寄信")) {
+            if (instruction.get(1).contains("@")) {
+                Uri mail = Uri.parse("mailto:" + instruction.get(1));
+                Intent sendEmail = new Intent(Intent.ACTION_SENDTO, mail);
+                startActivity(sendEmail);
+            }
+            else {
+                Uri uri = Uri.parse("smsto:" + instruction.get(1));
+                Intent intent = new Intent(Intent.ACTION_SENDTO, uri);
+//            intent.putExtra("sms_body", "The SMS text");
+                startActivity(intent);
+            }
         }
         else if (instruction.get(0).equals("撥給")) {
             Uri uri = Uri.parse("tel:" + instruction.get(1));
@@ -224,12 +224,6 @@ public class MainActivity extends AppCompatActivity {
         else if (instruction.get(0).equals("撥出")) {
             Uri uri = Uri.parse("tel:" + instruction.get(1));
             Intent intent = new Intent(Intent.ACTION_CALL, uri);
-            startActivity(intent);
-        }
-        else if (instruction.get(0).equals("簡訊")) {
-            Uri uri = Uri.parse("smsto:" + instruction.get(1));
-            Intent intent = new Intent(Intent.ACTION_SENDTO, uri);
-//            intent.putExtra("sms_body", "The SMS text");
             startActivity(intent);
         }
         else if (instruction.get(0).equals("連到")) {
@@ -268,17 +262,6 @@ public class MainActivity extends AppCompatActivity {
             Uri uri = Uri.parse("geo:0,0?q=" + instruction.get(1));
             Intent it = new Intent(Intent.ACTION_VIEW, uri);
             startActivity(it);
-        }
-        else if (instruction.get(0).equals("打開youtube")) {
-            Intent launchApp = getPackageManager().getLaunchIntentForPackage("com.google.android.youtube");
-            if (launchApp != null) {
-                launchApp.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(launchApp);
-            } else {
-                Uri uri = Uri.parse("market://details?id=" + "com.google.android.youtube");
-                launchApp = new Intent(Intent.ACTION_VIEW, uri);
-                startActivity(launchApp);
-            }
         }
     }
 }
