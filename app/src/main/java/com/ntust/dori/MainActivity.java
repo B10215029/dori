@@ -92,7 +92,7 @@ public class MainActivity extends AppCompatActivity {
         if (cursor != null) {
             if (cursor.getCount() == 0) {
                 db.execSQL("INSERT INTO OldKey(instruction) VALUES('打開')");
-                db.execSQL("INSERT INTO OldKey(instruction) VALUES('寄給')");
+                db.execSQL("INSERT INTO OldKey(instruction) VALUES('寄信')");
                 db.execSQL("INSERT INTO OldKey(instruction) VALUES('撥給')");
                 db.execSQL("INSERT INTO OldKey(instruction) VALUES('撥出')");
                 db.execSQL("INSERT INTO OldKey(instruction) VALUES('連到')");
@@ -160,19 +160,40 @@ public class MainActivity extends AppCompatActivity {
 
     void exec(ArrayList<String> instruction) {
         Log.e("@@@", instruction.get(0) + "," + instruction.get(1));
-        if (instruction.get(0).equals("打開相機")) {
-            Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
-            startActivity(intent);
+        if (instruction.get(0).equals("打開")) {
+            if (instruction.get(1).equals("相機")) {
+                Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
+                startActivity(intent);
+            }
+            else if (instruction.get(1).equals("聯絡人")) {
+                Uri contacts = Uri.parse("content://contacts/people");
+                Intent showContacts = new Intent(Intent.ACTION_VIEW, contacts);
+                startActivity(showContacts);
+            }
+            else if (instruction.get(1).equals("YouTube")) {
+                Intent launchApp = getPackageManager().getLaunchIntentForPackage("com.google.android.youtube");
+                if (launchApp != null) {
+                    launchApp.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(launchApp);
+                } else {
+                    Uri uri = Uri.parse("market://details?id=" + "com.google.android.youtube");
+                    launchApp = new Intent(Intent.ACTION_VIEW, uri);
+                    startActivity(launchApp);
+                }
+            }
         }
-        else if (instruction.get(0).equals("打開聯絡人")) {
-            Uri contacts = Uri.parse("content://contacts/people");
-            Intent showContacts = new Intent(Intent.ACTION_VIEW, contacts);
-            startActivity(showContacts);
-        }
-        else if (instruction.get(0).equals("寄信給")) {
-            Uri mail = Uri.parse("mailto:" + instruction.get(1));
-            Intent sendEmail = new Intent(Intent.ACTION_SENDTO, mail);
-            startActivity(sendEmail);
+        else if (instruction.get(0).equals("寄信")) {
+            if (instruction.get(1).contains("@")) {
+                Uri mail = Uri.parse("mailto:" + instruction.get(1));
+                Intent sendEmail = new Intent(Intent.ACTION_SENDTO, mail);
+                startActivity(sendEmail);
+            }
+            else {
+                Uri uri = Uri.parse("smsto:" + instruction.get(1));
+                Intent intent = new Intent(Intent.ACTION_SENDTO, uri);
+//            intent.putExtra("sms_body", "The SMS text");
+                startActivity(intent);
+            }
         }
         else if (instruction.get(0).equals("撥給")) {
             Uri uri = Uri.parse("tel:" + instruction.get(1));
@@ -182,12 +203,6 @@ public class MainActivity extends AppCompatActivity {
         else if (instruction.get(0).equals("撥出")) {
             Uri uri = Uri.parse("tel:" + instruction.get(1));
             Intent intent = new Intent(Intent.ACTION_CALL, uri);
-            startActivity(intent);
-        }
-        else if (instruction.get(0).equals("簡訊")) {
-            Uri uri = Uri.parse("smsto:" + instruction.get(1));
-            Intent intent = new Intent(Intent.ACTION_SENDTO, uri);
-//            intent.putExtra("sms_body", "The SMS text");
             startActivity(intent);
         }
         else if (instruction.get(0).equals("連到")) {
@@ -226,17 +241,6 @@ public class MainActivity extends AppCompatActivity {
             Uri uri = Uri.parse("geo:0,0?q=" + instruction.get(1));
             Intent it = new Intent(Intent.ACTION_VIEW, uri);
             startActivity(it);
-        }
-        else if (instruction.get(0).equals("打開youtube")) {
-            Intent launchApp = getPackageManager().getLaunchIntentForPackage("com.google.android.youtube");
-            if (launchApp != null) {
-                launchApp.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(launchApp);
-            } else {
-                Uri uri = Uri.parse("market://details?id=" + "com.google.android.youtube");
-                launchApp = new Intent(Intent.ACTION_VIEW, uri);
-                startActivity(launchApp);
-            }
         }
     }
 }
