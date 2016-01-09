@@ -9,6 +9,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -81,8 +82,28 @@ public class MainActivity extends AppCompatActivity {
         });
 
         db = openOrCreateDatabase("instruction", MODE_PRIVATE, null);
-        db.execSQL("CREATE TABLE IF NOT EXISTS Oldkey(_id INTEGER PRIMARY KEY, alias TEXT, instruction TEXT UNIQUE)");
-        db.execSQL("CREATE TABLE IF NOT EXISTS Hotkey(_id INTEGER PRIMARY KEY, instruction TEXT UNIQUE)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS HotKey(_id INTEGER PRIMARY KEY, alias TEXT, instruction TEXT UNIQUE)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS OldKey(_id INTEGER PRIMARY KEY, instruction TEXT UNIQUE)");
+        databaseInit();
+    }
+
+    void databaseInit() {
+        Cursor cursor = db.rawQuery("SELECT * FROM OldKey", null);
+        if (cursor != null) {
+            if (cursor.getCount() == 0) {
+                db.execSQL("INSERT INTO OldKey(instruction) VALUES('打開')");
+                db.execSQL("INSERT INTO OldKey(instruction) VALUES('寄給')");
+                db.execSQL("INSERT INTO OldKey(instruction) VALUES('撥給')");
+                db.execSQL("INSERT INTO OldKey(instruction) VALUES('撥出')");
+                db.execSQL("INSERT INTO OldKey(instruction) VALUES('連到')");
+                db.execSQL("INSERT INTO OldKey(instruction) VALUES('執行')");
+                db.execSQL("INSERT INTO OldKey(instruction) VALUES('選擇')");
+                db.execSQL("INSERT INTO OldKey(instruction) VALUES('檔案')");
+                db.execSQL("INSERT INTO OldKey(instruction) VALUES('搜尋')");
+                db.execSQL("INSERT INTO OldKey(instruction) VALUES('位置')");
+            }
+            cursor.close();
+        }
     }
 
     @Override
@@ -100,19 +121,45 @@ public class MainActivity extends AppCompatActivity {
     }
 
     ArrayList<String> analyze(ArrayList<String> matches) {
-        ArrayList<String> instruction = null;
-        //if (matches.get(0).substring(0, 3))
-        Cursor cursor = db.rawQuery("SELECT * FROM Hotkey", null);
+        ArrayList<String> instruction = new ArrayList<>();
+
+        Cursor cursor = db.rawQuery("SELECT * FROM HotKey", null);
         if (cursor != null) {
+            cursor.moveToFirst();
             for (int i=0; i<cursor.getCount(); ++i) {
-                
+                if (cursor.getString(1).equals(matches.get(0).substring(0, 4))) {
+                    instruction.add(cursor.getString(2));
+                    instruction.add(matches.get(0).substring(4));
+                    cursor.close();
+                    return instruction;
+                }
+                cursor.moveToNext();
             }
             cursor.close();
         }
+
+        cursor = db.rawQuery("SELECT * FROM OldKey", null);
+        if (cursor != null) {
+            cursor.moveToFirst();
+            for (int i=0; i<cursor.getCount(); ++i) {
+                if (cursor.getString(1).equals(matches.get(0).substring(0, 2))) {
+                    instruction.add(cursor.getString(1));
+                    instruction.add(matches.get(0).substring(2));
+                    cursor.close();
+                    return instruction;
+                }
+                cursor.moveToNext();
+            }
+            cursor.close();
+        }
+
+        instruction.add("");
+        instruction.add(matches.get(0));
         return instruction;
     }
 
     void exec(ArrayList<String> instruction) {
+        Log.e("@@@", instruction.get(0) + "," + instruction.get(1));
         if (instruction.get(0).equals("打開相機")) {
             Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
             startActivity(intent);
