@@ -23,9 +23,10 @@ import java.util.List;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
-    private static final int SPEECH_REQUEST_CODE = 1, CAMERA_REQUEST_CODE = 2;
+    private static final int SPEECH_REQUEST_CODE = 1, CAMERA_REQUEST_CODE = 2, SPEECHSHOW_REQUEST_CODE = 3;
     Button speak;
     ListView wordList;
+    EditText editText;
     public static SQLiteDatabase db = null;
 
     @Override
@@ -35,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
 
         speak = (Button)findViewById(R.id.button);
         wordList = (ListView)findViewById(R.id.listView);
+        editText = (EditText) findViewById(R.id.editText);
 
         speak.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -60,7 +62,13 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.test_button_1).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
+                Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+                String lang = Locale.TRADITIONAL_CHINESE.toString();
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, lang);
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, lang);
+                intent.putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, lang);
+                intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "OK Dori");
+                startActivityForResult(intent, SPEECHSHOW_REQUEST_CODE);
             }
         });
 
@@ -76,7 +84,6 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 ArrayList<String> matches = new ArrayList<>();
                 matches.add(((EditText) findViewById(R.id.editText)).getText().toString());
-//                matches.add(((EditText) findViewById(R.id.editText2)).getText().toString());
                 try {
                     exec(analyze(matches));
                 } catch (Exception e) {
@@ -121,6 +128,11 @@ public class MainActivity extends AppCompatActivity {
             } catch (Exception e) {
                 Toast.makeText(this, e.toString(), Toast.LENGTH_LONG).show();
             }
+        }
+        else if (requestCode == SPEECHSHOW_REQUEST_CODE && resultCode == RESULT_OK) {
+            ArrayList<String> matches = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+            wordList.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, matches));
+            editText.setText(editText.getText() + matches.get(0));
         }
         else if (requestCode == CAMERA_REQUEST_CODE && resultCode == RESULT_OK) {
             Uri photoUri = data.getData();
