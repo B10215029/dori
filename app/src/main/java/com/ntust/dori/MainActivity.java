@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 ArrayList<String> matches = new ArrayList<>();
-                matches.add(((EditText) findViewById(R.id.editText1)).getText().toString());
+                matches.add(((EditText) findViewById(R.id.editText)).getText().toString());
 //                matches.add(((EditText) findViewById(R.id.editText2)).getText().toString());
                 try {
                     exec(analyze(matches));
