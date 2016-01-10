@@ -1,5 +1,6 @@
 package com.ntust.dori;
 
+import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
@@ -8,6 +9,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -23,7 +25,7 @@ import java.util.List;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
-    private static final int SPEECH_REQUEST_CODE = 1, CAMERA_REQUEST_CODE = 2, SPEECHSHOW_REQUEST_CODE = 3;
+    private static final int SPEECH_REQUEST_CODE = 1, CAMERA_REQUEST_CODE = 2, SPEECHSHOW_REQUEST_CODE = 3, FILE_REQUEST_CODE = 2;
     Button speak;
     ListView wordList;
     EditText editText;
@@ -33,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        
         speak = (Button)findViewById(R.id.button);
         wordList = (ListView)findViewById(R.id.listView);
         editText = (EditText) findViewById(R.id.editText);
@@ -96,6 +98,17 @@ public class MainActivity extends AppCompatActivity {
         db.execSQL("CREATE TABLE IF NOT EXISTS HotKey(_id INTEGER PRIMARY KEY, alias TEXT UNIQUE, instruction TEXT)");
         db.execSQL("CREATE TABLE IF NOT EXISTS OldKey(_id INTEGER PRIMARY KEY, instruction TEXT UNIQUE)");
         databaseInit();
+
+        ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.CALL_PHONE, Manifest.permission.CAMERA, Manifest.permission.READ_CONTACTS}, 100);
+//        if(PackageManager.PERMISSION_GRANTED != ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.CALL_PHONE)){
+//            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.CALL_PHONE}, 100);
+//        }
+//        if(PackageManager.PERMISSION_GRANTED != ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.CAMERA)){
+//            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.CAMERA}, 100);
+//        }
+//        if(PackageManager.PERMISSION_GRANTED != ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_CONTACTS)){
+//            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_CONTACTS}, 100);
+//        }
     }
 
     void databaseInit() {
@@ -137,6 +150,12 @@ public class MainActivity extends AppCompatActivity {
         else if (requestCode == CAMERA_REQUEST_CODE && resultCode == RESULT_OK) {
             Uri photoUri = data.getData();
             Toast.makeText(this, "The photo is put in:\n" + photoUri, Toast.LENGTH_LONG).show();
+        }
+        else if (requestCode == FILE_REQUEST_CODE && resultCode == RESULT_OK) {
+            Uri uri = data.getData();
+            Toast.makeText(this, "The file is put in:\n" + uri, Toast.LENGTH_LONG).show();
+            Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+            startActivity(intent);
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
@@ -195,8 +214,8 @@ public class MainActivity extends AppCompatActivity {
         }
         else if (instruction.get(0).equals("打開")) {
             if (instruction.get(1).equals("相機")) {
-                Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
-                startActivity(intent);
+                Intent intent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+                startActivityForResult(intent, CAMERA_REQUEST_CODE);
             }
             else if (instruction.get(1).equals("聯絡人")) {
                 Uri contacts = Uri.parse("content://contacts/people");
@@ -263,7 +282,7 @@ public class MainActivity extends AppCompatActivity {
             Intent pickFile = new Intent(Intent.ACTION_GET_CONTENT);
             pickFile.setType("*/*");
             pickFile.addCategory(Intent.CATEGORY_OPENABLE);
-            startActivity(Intent.createChooser(pickFile, "selecta File from content provider"));
+            startActivityForResult(Intent.createChooser(pickFile, "selecta File from content provider"), FILE_REQUEST_CODE);
         }
         else if (instruction.get(0).equals("搜尋")) {
             Uri uri = Uri.parse("http://www.google.com/search?q=" + instruction.get(1));
