@@ -4,13 +4,11 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
-import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -117,12 +115,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == SPEECH_REQUEST_CODE && resultCode == RESULT_OK) {
             ArrayList<String> matches = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+            wordList.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, matches));
             try {
                 exec(analyze(matches));
             } catch (Exception e) {
                 Toast.makeText(this, e.toString(), Toast.LENGTH_LONG).show();
             }
-            wordList.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, matches));
         }
         else if (requestCode == CAMERA_REQUEST_CODE && resultCode == RESULT_OK) {
             Uri photoUri = data.getData();
