@@ -26,7 +26,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int SPEECH_REQUEST_CODE = 1, CAMERA_REQUEST_CODE = 2;
     Button speak;
     ListView wordList;
-    SQLiteDatabase db = null;
+    public static SQLiteDatabase db = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
