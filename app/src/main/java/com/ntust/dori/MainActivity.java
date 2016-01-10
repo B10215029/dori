@@ -269,7 +269,9 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.ins_list:
-                // TODO: 2016/1/9 檢視指令
+                Intent intent = new Intent();
+                intent.setClass(this, InsListActivity.class);
+                startActivity(intent);
                 break;
         }
         return super.onOptionsItemSelected(item);
