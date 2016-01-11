@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animation-list xmlns:android="http://schemas.android.com/apk/res/android"
+                android:oneshot="true">
+    <item android:drawable="@drawable/come16" android:duration="100" />
+    <item android:drawable="@drawable/come15" android:duration="100" />
+    <item android:drawable="@drawable/come14" android:duration="100" />
+    <item android:drawable="@drawable/come13" android:duration="100" />
+    <item android:drawable="@drawable/come12" android:duration="100" />
+    <item android:drawable="@drawable/come11" android:duration="100" />
+    <item android:drawable="@drawable/come10" android:duration="100" />
+    <item android:drawable="@drawable/come9" android:duration="100" />
+    <item android:drawable="@drawable/come8" android:duration="100" />
+    <item android:drawable="@drawable/come7" android:duration="100" />
+    <item android:drawable="@drawable/come6" android:duration="100" />
+    <item android:drawable="@drawable/come5" android:duration="100" />
+    <item android:drawable="@drawable/come4" android:duration="100" />
+    <item android:drawable="@drawable/come3" android:duration="100" />
+    <item android:drawable="@drawable/come2" android:duration="100" />
+    <item android:drawable="@drawable/come1" android:duration="100" />
+    <item android:drawable="@drawable/empty" android:duration="100" />
+</animation-list>

@@ -6,6 +6,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.drawable.AnimationDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
@@ -17,6 +18,7 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -26,19 +28,24 @@ import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
     private static final int SPEECH_REQUEST_CODE = 1, CAMERA_REQUEST_CODE = 2, SPEECHSHOW_REQUEST_CODE = 3, FILE_REQUEST_CODE = 2;
+    boolean doriShow = false;
+    boolean isSleep = false;
     Button speak;
     ListView wordList;
     EditText editText;
+    ImageView imageView;
+    public AnimationDrawable frameAnimation;
     public static SQLiteDatabase db = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        
+
         speak = (Button)findViewById(R.id.button);
         wordList = (ListView)findViewById(R.id.listView);
         editText = (EditText) findViewById(R.id.editText);
+        imageView = (ImageView)findViewById(R.id.imageView);
 
         speak.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -71,6 +78,7 @@ public class MainActivity extends AppCompatActivity {
                 intent.putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, lang);
                 intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "OK Dori");
                 startActivityForResult(intent, SPEECHSHOW_REQUEST_CODE);
+
             }
         });
 
@@ -126,6 +134,13 @@ public class MainActivity extends AppCompatActivity {
                 db.execSQL("INSERT INTO OldKey(instruction) VALUES('檔案')");
                 db.execSQL("INSERT INTO OldKey(instruction) VALUES('搜尋')");
                 db.execSQL("INSERT INTO OldKey(instruction) VALUES('位置')");
+                db.execSQL("INSERT INTO OldKey(instruction) VALUES('出來')");
+                db.execSQL("INSERT INTO OldKey(instruction) VALUES('回去')");
+                db.execSQL("INSERT INTO OldKey(instruction) VALUES('跳舞')");
+                db.execSQL("INSERT INTO OldKey(instruction) VALUES('睡覺')");
+                db.execSQL("INSERT INTO OldKey(instruction) VALUES('站好')");
+                db.execSQL("INSERT INTO OldKey(instruction) VALUES('名字')");
+                db.execSQL("INSERT INTO OldKey(instruction) VALUES('跳跳')");
             }
             cursor.close();
         }
@@ -163,50 +178,61 @@ public class MainActivity extends AppCompatActivity {
     ArrayList<String> analyze(ArrayList<String> matches) throws Exception {
         ArrayList<String> instruction = new ArrayList<>();
 
-        Cursor cursor = db.rawQuery("SELECT * FROM HotKey", null);
-        if (cursor != null) {
-            cursor.moveToFirst();
-            for (int i=0; i<cursor.getCount(); ++i) {
-                if (cursor.getString(1).equals(matches.get(0).substring(0, 2))) { //前2個
-                    matches.set(0, cursor.getString(2) + matches.get(0).substring(2));
-                    break;
+        Cursor cursor = null;
+
+        for (int index = 0; index < matches.size(); index++) {
+            cursor = db.rawQuery("SELECT * FROM HotKey", null);
+            if (cursor != null) {
+                cursor.moveToFirst();
+                for (int i=0; i<cursor.getCount(); ++i) {
+                    if (matches.get(index).length() >= 2 && cursor.getString(1).equals(matches.get(index).substring(0, 2))) { //前2個
+                        matches.set(index, cursor.getString(2) + matches.get(index).substring(2));
+                        break;
+                    }
+                    cursor.moveToNext();
                 }
-                cursor.moveToNext();
+            }
+
+            cursor = db.rawQuery("SELECT * FROM OldKey", null);
+            if (cursor != null) {
+                cursor.moveToFirst();
+                for (int i=0; i<cursor.getCount(); ++i) {
+                    if (matches.get(index).length() >= 2 && cursor.getString(1).equals(matches.get(index).substring(0, 2))) { //前2個
+                        instruction.add(cursor.getString(1)); //add ins
+                        instruction.add(matches.get(index).substring(2));
+                        cursor.close();
+                        return instruction;
+                    }
+                    cursor.moveToNext();
+                }
+
+                cursor.moveToFirst();
+                for (int i=0; i<cursor.getCount(); ++i) {
+                    if (matches.get(index).length() >= 4 && cursor.getString(1).equals(matches.get(index).substring(0, 4))) { //前4個
+                        instruction.add(cursor.getString(1)); //add ins
+                        instruction.add(matches.get(index).substring(4));
+                        cursor.close();
+                        return instruction;
+                    }
+                    cursor.moveToNext();
+                }
             }
         }
-
-        cursor = db.rawQuery("SELECT * FROM OldKey", null);
         if (cursor != null) {
-            cursor.moveToFirst();
-            for (int i=0; i<cursor.getCount(); ++i) {
-                if (cursor.getString(1).equals(matches.get(0).substring(0, 2))) { //前2個
-                    instruction.add(cursor.getString(1)); //add ins
-                    instruction.add(matches.get(0).substring(2));
-                    cursor.close();
-                    return instruction;
-                }
-                cursor.moveToNext();
-            }
-
-            cursor.moveToFirst();
-            for (int i=0; i<cursor.getCount(); ++i) {
-                if (cursor.getString(1).equals(matches.get(0).substring(0, 4))) { //前4個
-                    instruction.add(cursor.getString(1)); //add ins
-                    instruction.add(matches.get(0).substring(4));
-                    cursor.close();
-                    return instruction;
-                }
-                cursor.moveToNext();
-            }
             cursor.close();
         }
-
         instruction.add("");
         instruction.add(matches.get(0));
         return instruction;
     }
 
     void exec(ArrayList<String> instruction) throws Exception {
+        if (doriShow && (int)(Math.random() * 4) == 0) {
+            imageView.setBackgroundResource(R.drawable.sleep);
+            Toast.makeText(this, "管你的我要睡了", Toast.LENGTH_LONG).show();
+            isSleep = true;
+            return;
+        }
         if (instruction.get(0).equals("新增指令")) {
             String hotKey = instruction.get(1).substring(0, 2), oldKey = instruction.get(1).substring(2);
 
@@ -293,6 +319,92 @@ public class MainActivity extends AppCompatActivity {
             Uri uri = Uri.parse("geo:0,0?q=" + instruction.get(1));
             Intent it = new Intent(Intent.ACTION_VIEW, uri);
             startActivity(it);
+        }
+        else if (instruction.get(0).equals("出來") && !doriShow) {
+            imageView.setBackgroundResource(R.drawable.come);
+            frameAnimation = (AnimationDrawable)imageView.getBackground();
+            imageView.post(new Runnable() {
+                @Override
+                public void run() {
+                    frameAnimation.start();
+                }
+            });
+            doriShow = true;
+            isSleep = false;
+        }
+        else if (instruction.get(0).equals("回去") && doriShow) {
+            imageView.setBackgroundResource(R.drawable.back);
+            frameAnimation = (AnimationDrawable)imageView.getBackground();
+            imageView.post(new Runnable() {
+                @Override
+                public void run() {
+                    frameAnimation.start();
+                }
+            });
+            doriShow = false;
+            isSleep = false;
+        }
+        else if (instruction.get(0).equals("跳舞") && doriShow) {
+            imageView.setBackgroundResource(R.drawable.dance);
+            frameAnimation = (AnimationDrawable)imageView.getBackground();
+            imageView.post(new Runnable() {
+                @Override
+                public void run() {
+                    frameAnimation.start();
+                }
+            });
+            isSleep = false;
+        }
+        else if (instruction.get(0).equals("睡覺") && doriShow) {
+            if (isSleep) {
+                Toast.makeText(this, "我在睡了", Toast.LENGTH_LONG).show();
+            }
+            else {
+                if ((int)(Math.random() * 2) == 0) {
+                    imageView.setBackgroundResource(R.drawable.sleep);
+                    isSleep = true;
+                }
+                else
+                    Toast.makeText(this, "我不想睡", Toast.LENGTH_LONG).show();
+            }
+        }
+        else if (instruction.get(0).equals("站好") && doriShow) {
+            if ((int)(Math.random() * 2) == 0) {
+                imageView.setBackgroundResource(R.drawable.idle);
+            }
+            else {
+                imageView.setBackgroundResource(R.drawable.dance);
+                frameAnimation = (AnimationDrawable)imageView.getBackground();
+                imageView.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        frameAnimation.start();
+                    }
+                });
+                Toast.makeText(this, "不要", Toast.LENGTH_LONG).show();
+            }
+            isSleep = false;
+        }
+        else if (instruction.get(0).equals("名字") && doriShow && !isSleep) {
+            Toast.makeText(this, "Dori", Toast.LENGTH_LONG).show();
+        }
+        else if (instruction.get(0).equals("跳跳") && doriShow) {
+            imageView.setBackgroundResource(R.drawable.idle);
+            imageView.setBackgroundResource(R.drawable.jump);
+            frameAnimation = (AnimationDrawable)imageView.getBackground();
+            imageView.post(new Runnable() {
+                @Override
+                public void run() {
+                    frameAnimation.start();
+                }
+            });
+            isSleep = false;
+        }
+        else if (instruction.get(0).equals("")) {
+            if (doriShow)
+                Toast.makeText(this, instruction.get(1) + "是什麼?我聽不懂", Toast.LENGTH_LONG).show();
+            else
+                Toast.makeText(this, "無法解析" + instruction.get(1), Toast.LENGTH_LONG).show();
         }
     }
 
