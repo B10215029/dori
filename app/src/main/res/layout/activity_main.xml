@@ -29,12 +29,6 @@
             android:id="@+id/test_button_1"
             android:layout_weight="1"/>
 
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="test2"
-            android:id="@+id/test_button_2"
-            android:layout_weight="1"/>
     </LinearLayout>
 
     <LinearLayout

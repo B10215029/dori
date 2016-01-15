@@ -82,13 +82,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        findViewById(R.id.test_button_2).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-            }
-        });
-
         findViewById(R.id.button_run).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -122,26 +115,25 @@ public class MainActivity extends AppCompatActivity {
     void databaseInit() {
         Cursor cursor = db.rawQuery("SELECT * FROM OldKey", null);
         if (cursor != null) {
-            if (cursor.getCount() == 0) {
-                db.execSQL("INSERT INTO OldKey(instruction) VALUES('新增指令')");
-                db.execSQL("INSERT INTO OldKey(instruction) VALUES('打開')");
-                db.execSQL("INSERT INTO OldKey(instruction) VALUES('寄信')");
-                db.execSQL("INSERT INTO OldKey(instruction) VALUES('撥給')");
-                db.execSQL("INSERT INTO OldKey(instruction) VALUES('撥出')");
-                db.execSQL("INSERT INTO OldKey(instruction) VALUES('連到')");
-                db.execSQL("INSERT INTO OldKey(instruction) VALUES('執行')");
-                db.execSQL("INSERT INTO OldKey(instruction) VALUES('選擇')");
-                db.execSQL("INSERT INTO OldKey(instruction) VALUES('檔案')");
-                db.execSQL("INSERT INTO OldKey(instruction) VALUES('搜尋')");
-                db.execSQL("INSERT INTO OldKey(instruction) VALUES('位置')");
-                db.execSQL("INSERT INTO OldKey(instruction) VALUES('出來')");
-                db.execSQL("INSERT INTO OldKey(instruction) VALUES('回去')");
-                db.execSQL("INSERT INTO OldKey(instruction) VALUES('跳舞')");
-                db.execSQL("INSERT INTO OldKey(instruction) VALUES('睡覺')");
-                db.execSQL("INSERT INTO OldKey(instruction) VALUES('站好')");
-                db.execSQL("INSERT INTO OldKey(instruction) VALUES('名字')");
-                db.execSQL("INSERT INTO OldKey(instruction) VALUES('跳跳')");
-            }
+            db.execSQL("INSERT INTO OldKey(instruction) SELECT '新增指令' WHERE NOT EXISTS (SELECT * FROM OldKey WHERE instruction='新增指令')");
+            db.execSQL("INSERT INTO OldKey(instruction) SELECT '打開' WHERE NOT EXISTS (SELECT * FROM OldKey WHERE instruction='打開')");
+            db.execSQL("INSERT INTO OldKey(instruction) SELECT '寄信' WHERE NOT EXISTS (SELECT * FROM OldKey WHERE instruction='寄信')");
+            db.execSQL("INSERT INTO OldKey(instruction) SELECT '撥給' WHERE NOT EXISTS (SELECT * FROM OldKey WHERE instruction='撥給')");
+            db.execSQL("INSERT INTO OldKey(instruction) SELECT '撥出' WHERE NOT EXISTS (SELECT * FROM OldKey WHERE instruction='撥出')");
+            db.execSQL("INSERT INTO OldKey(instruction) SELECT '連到' WHERE NOT EXISTS (SELECT * FROM OldKey WHERE instruction='連到')");
+            db.execSQL("INSERT INTO OldKey(instruction) SELECT '執行' WHERE NOT EXISTS (SELECT * FROM OldKey WHERE instruction='執行')");
+            db.execSQL("INSERT INTO OldKey(instruction) SELECT '選擇' WHERE NOT EXISTS (SELECT * FROM OldKey WHERE instruction='選擇')");
+            db.execSQL("INSERT INTO OldKey(instruction) SELECT '檔案' WHERE NOT EXISTS (SELECT * FROM OldKey WHERE instruction='檔案')");
+            db.execSQL("INSERT INTO OldKey(instruction) SELECT '搜尋' WHERE NOT EXISTS (SELECT * FROM OldKey WHERE instruction='搜尋')");
+            db.execSQL("INSERT INTO OldKey(instruction) SELECT '位置' WHERE NOT EXISTS (SELECT * FROM OldKey WHERE instruction='位置')");
+            db.execSQL("INSERT INTO OldKey(instruction) SELECT '出來' WHERE NOT EXISTS (SELECT * FROM OldKey WHERE instruction='出來')");
+            db.execSQL("INSERT INTO OldKey(instruction) SELECT '回去' WHERE NOT EXISTS (SELECT * FROM OldKey WHERE instruction='回去')");
+            db.execSQL("INSERT INTO OldKey(instruction) SELECT '跳舞' WHERE NOT EXISTS (SELECT * FROM OldKey WHERE instruction='跳舞')");
+            db.execSQL("INSERT INTO OldKey(instruction) SELECT '睡覺' WHERE NOT EXISTS (SELECT * FROM OldKey WHERE instruction='睡覺')");
+            db.execSQL("INSERT INTO OldKey(instruction) SELECT '站好' WHERE NOT EXISTS (SELECT * FROM OldKey WHERE instruction='站好')");
+            db.execSQL("INSERT INTO OldKey(instruction) SELECT '名字' WHERE NOT EXISTS (SELECT * FROM OldKey WHERE instruction='名字')");
+            db.execSQL("INSERT INTO OldKey(instruction) SELECT '跳跳' WHERE NOT EXISTS (SELECT * FROM OldKey WHERE instruction='跳跳')");
+
             cursor.close();
         }
     }
